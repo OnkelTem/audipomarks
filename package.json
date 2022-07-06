@@ -1,0 +1,51 @@
+{
+  "name": "audipomarks",
+  "version": "0.0.1",
+  "description": "Audipo marks manager",
+  "keywords": [
+    "audiopo",
+    "audiobooks",
+    "language learning"
+  ],
+  "license": "LGPL-3.0-or-later",
+  "author": {
+    "name": "OnkelTem",
+    "email": "aneganov@gmail.com"
+  },
+  "main": "js",
+  "types": "js",
+  "bin": "bin/audipomarks",
+  "scripts": {
+    "prebuild": "rimraf js",
+    "build": "npm run build:types && npm run build:js",
+    "build:js": "babel src --out-dir js --extensions '.ts' --ignore '**/*.test.*' --source-maps --copy-files --no-copy-ignored",
+    "build:types": "tsc -p tsconfig.build.json",
+    "lint": "eslint -f visualstudio '*/**/*.{js,ts,tsx}'",
+    "release": "standard-version",
+    "run": "ts-node src/cli.ts",
+    "test": "exit 0"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.18.6",
+    "yargs": "^17.5.1",
+    "zod": "^3.17.3"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.18.6",
+    "@babel/core": "^7.18.6",
+    "@babel/node": "^7.18.6",
+    "@babel/plugin-transform-runtime": "^7.18.6",
+    "@babel/preset-env": "^7.18.6",
+    "@babel/preset-typescript": "^7.18.6",
+    "@tsconfig/node16": "^1.0.3",
+    "@types/yargs": "^17.0.10",
+    "@typescript-eslint/eslint-plugin": "^5.30.5",
+    "@typescript-eslint/parser": "^5.30.5",
+    "eslint": "^8.19.0",
+    "eslint-config-prettier": "^8.5.0",
+    "rimraf": "^3.0.2",
+    "standard-version": "^9.5.0",
+    "ts-node": "^10.8.2",
+    "typescript": "^4.7.4"
+  }
+}
