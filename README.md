@@ -1,6 +1,6 @@
 # Audipo Marks manager
 
-`audipomarks` is an [Audipo](#what-is-audipo) player [marks](#what-are-marks) manager, that allows you to:
+`audipomarks` is an [Audipo](#audipo) player [marks](#marks) manager, that allows you to:
 
 - split the all-marks file exported by Audipo player into smaller chunks and distribute them among the directories they refer to;
 
@@ -99,7 +99,7 @@ $ npx audipomarks <params>
 
 ### Exporting marks data
 
-Open Audipo app, go to **Preferences**, tap **Export all marks data**, then **Audipo marks format** on the next screen and finally tap **Share** to save the marks file somewhere, from where you can easily transfer it to your PC.
+Open the Audipo app, go to **Preferences**, tap **Export all marks data**, then **Audipo marks format** on the next screen and finally tap **Share** to save the marks file somewhere, from where you can easily transfer it to your PC.
 
 ![](doc/export.png)
 
@@ -212,7 +212,7 @@ You're done, congratulations!
 
 ## Audipo and marks
 
-### What is Audipo?
+### Audipo
 
 [Music Speed Changer: Audipo](https://play.google.com/store/apps/details?id=jp.ne.sakura.ccice.audipo&hl=en&gl=US) is an audio player for Android.
 
@@ -231,12 +231,12 @@ It features:
 
 And many more.
 
-### What are marks?
+### Marks
 
 Marks are basically a list of timecodes. They are usually used as stop points for the player to allow for A-B repetition or for fast and precise navigation through an audio recording.
 
 In Audipo player you create marks by tapping the <img src="doc/audipo-add-mark-button.png" width="30" style="vertical-align: bottom"/> button.
 
-You can also open the list of mark in a separate window and fine-adjust any mark with the precision of hundredths of a second.
+You can also open the mark list in a separate window and fine-adjust any mark with the precision of hundredths of a second.
 
 ![Audipo marks](doc/marks.png)
