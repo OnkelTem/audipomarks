@@ -12,6 +12,11 @@
     "name": "OnkelTem",
     "email": "aneganov@gmail.com"
   },
+  "homepage": "https://github.com/OnkelTem/audipomarks",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OnkelTem/audipomarks.git"
+  },
   "main": "js",
   "types": "js",
   "bin": "bin/audipomarks",

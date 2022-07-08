@@ -183,7 +183,7 @@ Things you can do now:
 
 ### Joining
 
-After you finished with refactoring locations of your media or with updating marks files, you're now ready to build the all-marks file and import it back into Audipo.
+After you're finished with refactoring locations of your media or with updating marks files, you're now ready to build the all-marks file and import it back into Audipo.
 
 ```
 $ audipomarks join /home/me/MyMedia
