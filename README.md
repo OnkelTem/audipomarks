@@ -1,5 +1,7 @@
 # Audipo Marks manager
 
+![npm](https://img.shields.io/npm/v/audipomarks)
+
 `audipomarks` is an [Audipo](#audipo) player [marks](#marks) manager, that allows you to:
 
 - split the all-marks file exported by Audipo player into smaller chunks and distribute them among the directories they refer to;
