@@ -1,6 +1,6 @@
 {
   "name": "audipomarks",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Audipo marks manager",
   "keywords": [
     "audiopo",
@@ -52,5 +52,10 @@
     "standard-version": "^9.5.0",
     "ts-node": "^10.8.2",
     "typescript": "^4.7.4"
+  },
+  "standard-version": {
+    "skip": {
+      "changelog": true
+    }
   }
 }
