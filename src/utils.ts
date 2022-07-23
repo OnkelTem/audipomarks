@@ -3,6 +3,12 @@ import path from "path";
 
 export const GLOBAL_MARKS_FILENAME = "global.audipomark";
 export const LOCAL_MARKS_FILENAME = "local.audipomark";
+export const LOCAL_CONFIG_FILE = ".audipomarks";
+export const DEFAULT_DURATION_MS = 1000;
+export const DEFAULT_NOISE_DB = 50;
+
+// Minimum distance between marks
+export const MIN_MARK_DISTANCE_MS = 1000;
 
 export function isRecord(a: unknown): a is Record<string, unknown> {
   return typeof a === "object" && a != null;
@@ -58,6 +64,12 @@ export function fileExists(filePath: string) {
   return true;
 }
 
-export class Abort extends Error {}
-export class JoinError extends Error {}
-export class StorageError extends Error {}
+export function log(...msg: any[]) {
+  // eslint-disable-next-line
+  console.log(...msg);
+}
+
+export function err(...msg: any[]) {
+  // eslint-disable-next-line
+  console.error(...msg);
+}

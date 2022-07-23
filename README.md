@@ -6,7 +6,9 @@
 
 - split the all-marks file exported by Audipo player into smaller chunks and distribute them among the directories they refer to;
 
-- recursively join multiple directory-level marks files into the all-marks one, that you can then import back into Audipo.
+- recursively join multiple directory-level marks files into the all-marks one, that you can then import back into Audipo;
+
+- generate marks automatically using **FFmpeg** [silencedetect](https://ffmpeg.org/ffmpeg-filters.html#silencedetect) filter.
 
 ## Usage
 
@@ -30,6 +32,12 @@ Join:
 audipomarks join .
 ```
 
+Generate marks:
+
+```
+audipomarks mark -r .
+```
+
 ### Prerequisites
 
 #### Required software
@@ -37,7 +45,6 @@ audipomarks join .
 `audipomarks` is written on JavaScript, and so you need to install [Node.js 16.x](https://nodejs.org/en/) and [npm 8.x](https://www.npmjs.com/package/npm).
 
 > 💡 I recommend using [`nvm`](https://github.com/nvm-sh/nvm) for getting both node and npm. It also lets you to install packages globally (`npm i -g ...`) w/o administrator priviledges.
-
 
 
 #### Media arrangement
@@ -60,7 +67,7 @@ and have it already copied to your PC at:
 
 > 💡 With FolderSync, you just add a folder-level rule, and get those two directories in sync all the time.
 
-We'll be referring this setup below.
+We'll refer this setup below.
 
 ### Install
 
@@ -128,7 +135,7 @@ So now you should have your media files along with the exported all-marks file i
         ...
 ```
 
-## Splitting
+## The `split` command
 
 Now that you have your all-marks data file in place on your PC, you're ready to disassemble it through directories with the actual audio files:
 
@@ -148,6 +155,10 @@ The `split` command will:
 - check all the directories and files from it,
 - split the data by smaller marks files
 - and save them under the `local.audipomark` name in the directories they refer to.
+
+There is also an optional `--normalize` `(-n)` flag, which forces `audipomarks` to
+filter discovered marks. Basically, it removes all the marks which are too close to
+each other. The hard-coded proximity value now is 1 second (1000ms). When generating marks with `mark` command (see below), normalization is performed automatically.
 
 So your should end up with 3 new files:
 
@@ -177,13 +188,13 @@ For example, the first `local.audipomark` from above will keep marks from `Lesso
 
 Also, `local.audipomark` files don't keep their original (phone) locations and hence their containing directories can now be relocated according to your preferences.
 
-Things you can do now:
+Things you may want to do with now "disassebmled" marks file:
 
 - Rename directories
 - Move directories to new locations within your media directory
 - Generate marks using tools like [audio-silence-marks](https://pypi.org/project/audio-silence-marks/)
 
-### Joining
+## The `join` command
 
 After you're finished with refactoring locations of your media or with updating marks files, you're now ready to build the all-marks file and import it back into Audipo.
 
@@ -208,9 +219,51 @@ You can now import it back into Audipo:
 
 You're done, congratulations!
 
+## The `mark` command
+
+Now that the functionality of [audio-silence-marks](https://pypi.org/project/audio-silence-marks/) has been ported into this tool, you can
+generate marks automatically for a directory or even a directory tree.
+
+```
+$ audipomarks mark /home/me/MyMedia/Lessons
+```
+
+This command will run FFmpeg [silencedetect](https://ffmpeg.org/ffmpeg-filters.html#silencedetect) filter against every file in that dir (only) and
+will generate `local.audipomark` file with the list of autodetected marks.
+
+If you want it to operate recursively use `--recursive` `(-r)` flag:
+
+```
+$ audipomarks mark -r /home/me/MyMedia
+```
+
+The **silencedetect** filter takes two paramteres: `noise` and `duration`.
+The default values `audipomarks` uses are:
+
+`noise` = `50` (dB)<br/>
+`duration` = `1000` (ms)
+
+There is no way, however, to pass them via the command line options.
+
+Instead, you should create a special file named **.audiomarks** in every directory you want to apply those parameters for:
+
+```json
+{
+  "ffmpeg": {
+    "duration": 800,
+    "noise": 40
+  }
+}
+```
+
+It will come in handy later, if/when you discover that your last generation doesn't satisfy you.
+
+It should be noted, that FFmpeg **silencedetect** filter may return intervals
+which are kind of too close to each other. For this reason, `audipomarks` filters out marks which are _too close_ to the previous ones. The hardcoded thrashold is 1 second (1000ms).
+
 ## TODO
 
-- [ ] Bring functionality from [audio-silence-marks](https://pypi.org/project/audio-silence-marks/) into this tool, but preserving the directory-scoped marks file paradigm (`audio-silence-marks` ends up with just one file for a subtree)
+- [x] Bring functionality from [audio-silence-marks](https://pypi.org/project/audio-silence-marks/) into this tool, but preserving the directory-scoped marks file paradigm (`audio-silence-marks` ends up with just one file for a subtree)
 
 ## Audipo and marks
 

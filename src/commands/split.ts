@@ -1,16 +1,24 @@
 import path from "path";
 import fs from "fs";
 
-import { AudipoMarksFile, AudipoMarksStorage } from "./models/audipomark.model";
 import {
-  Abort,
+  AudipoMarksFile,
+  AudipoMarksStorage,
+} from "../models/audipomark.model";
+import {
   directoryExists,
   fileExists,
   isChildOfPath,
   LOCAL_MARKS_FILENAME,
-} from "./utils";
-import { readStorage } from "./services/audipomark.service";
-import { askUser, yesRegExp } from "./services/readline.service";
+  log,
+} from "../utils";
+import {
+  enumarateMarks,
+  normalizeMarks,
+  readStorage,
+} from "../services/audipomark.service";
+import { allRegExp, askUser, yesRegExp } from "../services/readline.service";
+import { Abort } from "../errors";
 
 type DirFilesMap = Map<string, AudipoMarksFile[]>;
 
@@ -21,10 +29,14 @@ type DirFilesMap = Map<string, AudipoMarksFile[]>;
  *
  * For example, if the user filesystem is located at /storage/emulated/0 on the phone,
  * and our user directory there is path/to/MySyncedFolder, then `phoneUserDir` param should be
- * ether "path/to/MySyncFolder" (relative) or "/storage/emulated/0/path/to/MySyncFolder" (absolute).
+ * either "path/to/MySyncFolder" (relative) or "/storage/emulated/0/path/to/MySyncFolder" (absolute).
  * And it is assumed, that the marks storage containing directory (`inputFilePath`) is a copy of "MySyncFolder".
  */
-export default async function (inputFilePath: string, phoneUserDir: string) {
+export default async function (
+  inputFilePath: string,
+  phoneUserDir: string,
+  normalize: boolean
+) {
   const audipoMarksStorage = readStorage(inputFilePath);
 
   // Absolute path like "/storage/emulated/0/path/to/MySyncFolder", see above.
@@ -47,7 +59,8 @@ export default async function (inputFilePath: string, phoneUserDir: string) {
   // Validate our map against our real files and relaitve to the workingDir
   const validatedDirFilesMap = await validateDirFilesMap(
     dirFilesMap,
-    workingDir
+    workingDir,
+    normalize
   );
 
   // Finally, write files into directories.
@@ -86,12 +99,17 @@ function buildDirFilesMap(
 
 async function validateDirFilesMap(
   dirFileMap: DirFilesMap,
-  workingDir: string
+  workingDir: string,
+  normalize: boolean
 ) {
   const validatedDirFilesMap: DirFilesMap = new Map();
 
-  // eslint-disable-next-line
-  console.log("Checking working dir for storage conformance");
+  log("Checking working dir for storage conformance");
+
+  log(`Marks normalization: ${normalize ? "enabled" : "disabled"}`);
+
+  let yesToAllNoExists = false;
+  let yesToAllSizeDiffers = false;
 
   for (const [dir, files] of dirFileMap.entries()) {
     // We have to check if dir belongs to the working file tree
@@ -123,36 +141,67 @@ async function validateDirFilesMap(
 
     const validatedFiles: AudipoMarksFile[] = [];
 
+    // Marks ID numerator
+    let markId = 1;
+
     for (const file of files) {
       const filePath = path.join(dir, file.filepath);
       // Chech file existence
       if (!fileExists(filePath)) {
-        // Storage may contain unexisting files or directories that we may want to ignore.
-        const answer = await askUser(
-          `File doesn't exist or isn't available: "${filePath}", proceed? [Y/n]`
-        );
-        if (!yesRegExp.test(answer) && answer !== "") {
-          throw new Abort();
+        log(`File doesn't exist or isn't available: "${filePath}"`);
+        if (!yesToAllNoExists) {
+          // Storage may contain unexisting files or directories that we may want to ignore.
+          const answer = await askUser(`Ignore file? [Y/a/n]`);
+          if (
+            !yesRegExp.test(answer) &&
+            !allRegExp.test(answer) &&
+            answer !== ""
+          ) {
+            throw new Abort();
+          }
+          if (allRegExp.test(answer)) {
+            yesToAllNoExists = true;
+          }
         }
+
+        log("ignoring");
         continue;
       }
       // Check file sizes
+      let realFileSize = 0;
       try {
-        const size = fs.statSync(filePath).size;
-        if (size != file.fileSize) {
-          const answer = await askUser(
-            `File size differs from the one from the storage: "${filePath}", expected size: ${file.fileSize}, actual size: ${size}, proceed? [Y/n]`
+        realFileSize = fs.statSync(filePath).size;
+        if (realFileSize != file.fileSize) {
+          log(
+            `File size differs from the one from the storage: "${filePath}", expected size: ${file.fileSize}, actual size: ${realFileSize}`
           );
-          if (!yesRegExp.test(answer) && answer !== "") {
-            throw new Abort();
+          if (!yesToAllSizeDiffers) {
+            const answer = await askUser(`Ignore the difference? [Y/a/n]`);
+            if (
+              !yesRegExp.test(answer) &&
+              !allRegExp.test(answer) &&
+              answer !== ""
+            ) {
+              throw new Abort();
+            }
+            if (allRegExp.test(answer)) {
+              yesToAllSizeDiffers = true;
+            }
           }
-          continue;
         }
       } catch (e) {
         // This shouldn't happen, so just exit
         throw e;
       }
-      validatedFiles.push(file);
+      const normalizedMarks = normalize
+        ? normalizeMarks(file.marklist)
+        : file.marklist;
+      validatedFiles.push({
+        ...file,
+        fileSize: realFileSize,
+        marklist: enumarateMarks(normalizedMarks, markId),
+      });
+      markId = markId + normalizedMarks.length;
     }
 
     validatedDirFilesMap.set(dir, validatedFiles);
@@ -169,8 +218,8 @@ function writeNewStorages(dirFilesMap: DirFilesMap) {
       files,
     };
     const storageFilePath = path.join(dir, LOCAL_MARKS_FILENAME);
-    // eslint-disable-next-line
-    console.log(`Writing file: "${storageFilePath}"`);
+
+    log(`Writing file: "${storageFilePath}"`);
     fs.writeFileSync(storageFilePath, JSON.stringify(newStorage, null, 2));
   }
 }

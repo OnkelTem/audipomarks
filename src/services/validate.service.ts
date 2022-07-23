@@ -1,5 +1,6 @@
 import { SafeParseReturnType, SafeParseSuccess } from "zod";
-import { BetterObject, isRecord, StorageError } from "../utils";
+import { StorageError } from "../errors";
+import { BetterObject, isRecord } from "../utils";
 
 export function formatZodErrors(
   formatted: Record<string, unknown>,

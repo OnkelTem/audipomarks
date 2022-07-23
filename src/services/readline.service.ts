@@ -1,6 +1,7 @@
 import { createInterface } from "readline";
 
 export const yesRegExp = /^(y|yes)$/i;
+export const allRegExp = /^(a|all)$/i;
 
 export function askUser(q: string) {
   return new Promise<string>((r) => {
