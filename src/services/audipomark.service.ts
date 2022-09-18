@@ -1,10 +1,11 @@
 import { AudipoMark, AudipoMarksStorage } from "../models/audipomark.model";
 import { schemaAudipoMarksStorage } from "../schemas/audipomark.schema";
-import { assertIsString, MIN_MARK_DISTANCE_MS } from "../utils";
+import { assertIsString } from "../utils";
 import { assertNoZodErrors } from "./validate.service";
 import { readFileSync } from "fs";
 import { AudipoMarksConfig } from "../models/config.model";
 import { schemaAudipoMarksConfig } from "../schemas/config.schema";
+import { MIN_MARK_DISTANCE_MS } from "../constants";
 
 export function readStorage(marksStorageFile: string) {
   const rawData = readFileSync(marksStorageFile, "utf-8");

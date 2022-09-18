@@ -3,30 +3,20 @@ import join from "./commands/join";
 import mark from "./commands/mark";
 // import play from "./commands/play";
 import split from "./commands/split";
-import { Abort, JoinError, MarkError } from "./errors";
 import {
-  LOCAL_MARKS_FILENAME,
+  DEFAULT_DURATION_MS,
+  DEFAULT_NOISE_DB,
   GLOBAL_MARKS_FILENAME,
+  LOCAL_MARKS_FILENAME,
   MIN_MARK_DISTANCE_MS,
-  err,
-  log,
-} from "./utils";
+} from "./constants";
+import { Abort, JoinError, MarkError } from "./errors";
+import { err, log } from "./utils";
 
 export default function app(params: string[]) {
   return (
     yargs(params)
       .demandCommand(1)
-      .fail(function (msg: string | null, error: Error | null) {
-        if (error != null) {
-          err("\n\x1b[31m%s\x1b[0m", error.message);
-          if (error.stack) {
-            log(error.stack);
-          }
-        } else if (msg != null) {
-          err("\n\x1b[31m%s\x1b[0m", msg);
-        }
-        process.exit(1);
-      })
       .command(
         "split <input-file>",
         "Split and arrange .audipomarks data by directories, relative to the storage location.",
@@ -101,7 +91,7 @@ export default function app(params: string[]) {
         }
       )
       .command(
-        "mark <dir>",
+        "mark [options] <dir>",
         `Traverses file tree under <dir>, and creates "${LOCAL_MARKS_FILENAME}" files with silence spots autodetected by FFmpeg "silencedetect" filter.`,
         (yargs) =>
           yargs
@@ -109,6 +99,20 @@ export default function app(params: string[]) {
               describe: `Working directory`,
               type: "string",
               demandOption: true,
+            })
+            .options({
+              duration: {
+                alias: "d",
+                description: `Set silence duration until notification. Default is ${DEFAULT_DURATION_MS}ms.`,
+                type: "number",
+              },
+            })
+            .options({
+              noise: {
+                alias: "n",
+                description: `Set noise tolerance in dB. Default is ${DEFAULT_NOISE_DB}dB.`,
+                type: "number",
+              },
             })
             .options({
               recursive: {
@@ -127,9 +131,9 @@ export default function app(params: string[]) {
               "$0 mark -r path/to/AudioLibrary",
               `Recursively process "path/to/AudioLibrary" directory and create "${LOCAL_MARKS_FILENAME}" in every nested directory with audio files.`
             ),
-        async (argv) => {
+        async ({ dir, recursive, duration, noise }) => {
           try {
-            await mark(argv.dir, argv.recursive);
+            await mark(dir, recursive, { ffmpeg: { duration, noise } });
           } catch (e) {
             if (e instanceof MarkError) {
               err(e.message);
@@ -139,6 +143,20 @@ export default function app(params: string[]) {
           }
         }
       )
+      .usage("usage: $0 <command> [options]")
+      .fail(function (msg: string | null, error: Error | null) {
+        if (error != null) {
+          err("\n\x1b[31m%s\x1b[0m", error.message);
+          if (error.stack) {
+            log(error.stack);
+          }
+        } else if (msg != null) {
+          err("\n\x1b[31m%s\x1b[0m\n", msg);
+          yargs.showHelp();
+        }
+        process.exit(1);
+      })
+      .help()
 
       // TODO: do it later. Via VLC HTTP API. Maybe.
       // .command(

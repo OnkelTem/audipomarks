@@ -1,15 +1,6 @@
 import fs from "fs";
 import path from "path";
 
-export const GLOBAL_MARKS_FILENAME = "global.audipomark";
-export const LOCAL_MARKS_FILENAME = "local.audipomark";
-export const LOCAL_CONFIG_FILE = ".audipomarks";
-export const DEFAULT_DURATION_MS = 1000;
-export const DEFAULT_NOISE_DB = 50;
-
-// Minimum distance between marks
-export const MIN_MARK_DISTANCE_MS = 1000;
-
 export function isRecord(a: unknown): a is Record<string, unknown> {
   return typeof a === "object" && a != null;
 }
@@ -35,9 +26,7 @@ export function assertIsString(arg: any): asserts arg is string {
  */
 export function isChildOfPath(dir: string, parent: string) {
   const relative = path.relative(parent, dir);
-  return (
-    relative != "" && !relative.startsWith("..") && !path.isAbsolute(relative)
-  );
+  return relative != "" && !relative.startsWith("..") && !path.isAbsolute(relative);
 }
 
 export function directoryExists(dirPath: string) {
@@ -73,3 +62,7 @@ export function err(...msg: any[]) {
   // eslint-disable-next-line
   console.error(...msg);
 }
+
+export type RecursivePartial<T> = {
+  [P in keyof T]?: T[P] extends (infer U)[] ? RecursivePartial<U>[] : T[P] extends object ? RecursivePartial<T[P]> : T[P];
+};

@@ -1,10 +1,10 @@
-# Audipo Marks manager
+# Audipo Marks Manager
 
 ![npm](https://img.shields.io/npm/v/audipomarks)
 
 `audipomarks` is an [Audipo](#audipo) player [marks](#marks) manager, that allows you to:
 
-- split the all-marks file exported by Audipo player into smaller chunks and distribute them among the directories they refer to;
+- split the all-marks file exported by the Audipo player into smaller chunks and distribute them among the directories they refer to;
 
 - recursively join multiple directory-level marks files into the all-marks one, that you can then import back into Audipo;
 
@@ -12,42 +12,40 @@
 
 ## Usage
 
-### TL;DR
-
 Install:
 
 ```
 $ npm i -g audipomarks
 ```
 
-Split:
+Split one big audipomark-file by media directories:
 
 ```
 audipomarks split --root=MyMedia exported.audipomark
 ```
 
-Join:
+Join audipomark-files from media directories into one `global.audiopomark` file:
 
 ```
-audipomarks join .
+audipomarks join /path/to/media/
 ```
 
 Generate marks:
 
 ```
-audipomarks mark -r .
+audipomarks mark -r /path/to/media/
 ```
 
-### Prerequisites
+## Prerequisites
 
-#### Required software
+### Required software
 
-`audipomarks` is written on JavaScript, and so you need to install [Node.js 16.x](https://nodejs.org/en/) and [npm 8.x](https://www.npmjs.com/package/npm).
+`audipomarks` is written in JavaScript, and so you need to install [Node.js 16.x](https://nodejs.org/en/) and [npm 8.x](https://www.npmjs.com/package/npm).
 
 > 💡 I recommend using [`nvm`](https://github.com/nvm-sh/nvm) for getting both node and npm. It also lets you to install packages globally (`npm i -g ...`) w/o administrator priviledges.
 
 
-#### Media arrangement
+### Media arrangement
 
 Let's assume you have a folder with your media files somewhere on your phone, and also have it copied to your PC.
 
@@ -69,7 +67,7 @@ and have it already copied to your PC at:
 
 We'll refer this setup below.
 
-### Install
+## Install
 
 **Global installation (recommended)**
 
@@ -108,7 +106,7 @@ $ npx audipomarks <params>
 
 ### Exporting marks data
 
-Open the Audipo app, go to **Preferences**, tap **Export all marks data**, then **Audipo marks format** on the next screen and finally tap **Share** to save the marks file somewhere, from where you can easily transfer it to your PC.
+Open the Audipo app, go to **Preferences**, tap **Export all marks data**, then **Audipo marks format** on the next screen, and finally tap **Share** to save the marks file somewhere, from where you can easily transfer it to your PC.
 
 ![](doc/export.png)
 
@@ -135,7 +133,9 @@ So now you should have your media files along with the exported all-marks file i
         ...
 ```
 
-## The `split` command
+## Commands
+
+### `split`
 
 Now that you have your all-marks data file in place on your PC, you're ready to disassemble it through directories with the actual audio files:
 
@@ -153,14 +153,14 @@ The `split` command will:
 
 - parse the all-marks file,
 - check all the directories and files from it,
-- split the data by smaller marks files
+- split the data into smaller marks files
 - and save them under the `local.audipomark` name in the directories they refer to.
 
 There is also an optional `--normalize` `(-n)` flag, which forces `audipomarks` to
 filter discovered marks. Basically, it removes all the marks which are too close to
-each other. The hard-coded proximity value now is 1 second (1000ms). When generating marks with `mark` command (see below), normalization is performed automatically.
+each other. The hard-coded proximity value now is 1 second (1000ms). When generating marks with the `mark` command (see below), normalization is performed automatically.
 
-So your should end up with 3 new files:
+So you should end up with 3 new files:
 
 ```
 /home/
@@ -180,21 +180,21 @@ So your should end up with 3 new files:
         ...
 ```
 
-## Working with directory-level marks files
+#### Working with directory-level marks files
 
-Each `local.audipomark` file references only files from the directory it's saved into.
+Each `local.audipomark` file references only the files from the directory it's saved into.
 
 For example, the first `local.audipomark` from above will keep marks from `Lesson1.mp3` and `Lesson2.mp3` but not from `MoreLessons/` subdirectory.
 
 Also, `local.audipomark` files don't keep their original (phone) locations and hence their containing directories can now be relocated according to your preferences.
 
-Things you may want to do with now "disassebmled" marks file:
+Things you may want to do with now "disassembled" marks file:
 
 - Rename directories
 - Move directories to new locations within your media directory
 - Generate marks using tools like [audio-silence-marks](https://pypi.org/project/audio-silence-marks/)
 
-## The `join` command
+### `join`
 
 After you're finished with refactoring locations of your media or with updating marks files, you're now ready to build the all-marks file and import it back into Audipo.
 
@@ -219,10 +219,10 @@ You can now import it back into Audipo:
 
 You're done, congratulations!
 
-## The `mark` command
+### `mark`
 
 Now that the functionality of [audio-silence-marks](https://pypi.org/project/audio-silence-marks/) has been ported into this tool, you can
-generate marks automatically for a directory or even a directory tree.
+generate marks automatically for a directory or a directory tree.
 
 ```
 $ audipomarks mark /home/me/MyMedia/Lessons
@@ -237,33 +237,32 @@ If you want it to operate recursively use `--recursive` `(-r)` flag:
 $ audipomarks mark -r /home/me/MyMedia
 ```
 
-The **silencedetect** filter takes two paramteres: `noise` and `duration`.
-The default values `audipomarks` uses are:
+The **silencedetect** FFmpeg filter takes two parameters: `noise` and `duration`. The default values `audipomarks` uses are:
 
+`duration` = `1000` (ms)<br/>
 `noise` = `50` (dB)<br/>
-`duration` = `1000` (ms)
 
-There is no way, however, to pass them via the command line options.
+You can override them via the command line:
 
-Instead, you should create a special file named **.audiomarks** in every directory you want to apply those parameters for:
+```
+$ audipomarks mark --duration 500 --noise 40 -r /home/me/MyMedia
+```
+
+During marks generation, special config files with the name **.audiomarks** will be created in every directory with audio files.
+It will contain the config parameters that have been used, e.g.:
 
 ```json
 {
   "ffmpeg": {
-    "duration": 800,
+    "duration": 500,
     "noise": 40
   }
 }
 ```
 
-It will come in handy later, if/when you discover that your last generation doesn't satisfy you.
+(The **.audiomarks** files will be created no matter whether you pass duration/noise parameters or not.)
 
-It should be noted, that FFmpeg **silencedetect** filter may return intervals
-which are kind of too close to each other. For this reason, `audipomarks` filters out marks which are _too close_ to the previous ones. The hardcoded thrashold is 1 second (1000ms).
-
-## TODO
-
-- [x] Bring functionality from [audio-silence-marks](https://pypi.org/project/audio-silence-marks/) into this tool, but preserving the directory-scoped marks file paradigm (`audio-silence-marks` ends up with just one file for a subtree)
+The FFmpeg **silencedetect** filter may return intervals that are too close to each other. For this reason, `audipomarks` removes them. The hardcoded proximity threshold is 500ms.
 
 ## Audipo and marks
 
@@ -280,15 +279,14 @@ It's a swiss-knife for tasks like:
 It features:
 
 - Nice support for Bluetooth remote control devices.
-- Setting playback stop points, called **marks**.
-- Changing the pitch (to match your own vocal range).
+- Setting playback stop points called **marks****.
+- Changing the pitch (to match your vocal range).
 - Changing the playback speed (this one is regular, but still...).
 
 And many more.
 
 ### Marks
-
-Marks are basically a list of timecodes. They are usually used as stop points for the player to allow for A-B repetition or for fast and precise navigation through an audio recording.
+Marks are a list of time codes. They are usually used as stop points by the player to allow for A-B repetition or fast and precise navigation through an audio recording.
 
 In Audipo player you create marks by tapping the <img src="doc/audipo-add-mark-button.png" width="30" style="vertical-align: bottom"/> button.
 

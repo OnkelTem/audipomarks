@@ -1,47 +1,18 @@
 import path from "path";
-import {
-  DEFAULT_DURATION_MS,
-  DEFAULT_NOISE_DB,
-  directoryExists,
-  LOCAL_CONFIG_FILE,
-  LOCAL_MARKS_FILENAME,
-  log,
-} from "../utils";
+import { directoryExists, log, RecursivePartial } from "../utils";
 import { promises as fsPromises, statSync, writeFileSync } from "fs";
 import { isAudioFile } from "../services/filetype.service";
-import { ffmpeg } from "../services/ffmpeg.service";
+import { ffmpeg, renderFFmpegParams } from "../services/ffmpeg.service";
 import { MarkError } from "../errors";
-import {
-  AudipoMark,
-  AudipoMarksFile,
-  AudipoMarksStorage,
-} from "../models/audipomark.model";
+import { AudipoMark, AudipoMarksFile, AudipoMarksStorage } from "../models/audipomark.model";
 import { normalizeMarks, readConfig } from "../services/audipomark.service";
 import { AudipoMarksConfig } from "../models/config.model";
-
-// Clearance at the end of silence intervals, before audio data
-const MARK_CLEARANCE = 500;
+import { DEFAULT_DURATION_MS, DEFAULT_NOISE_DB, LOCAL_CONFIG_FILE, LOCAL_MARKS_FILENAME, MARK_CLEARANCE } from "../constants";
 
 export type FFmpegFilterOptions = {
   duration: number;
   noise: number;
 };
-
-export default async function (workingDir: string, recursive: boolean) {
-  const absoluteWorkingDir = path.resolve(workingDir);
-
-  if (!directoryExists(workingDir)) {
-    throw new MarkError(`Directory not found: "${directoryExists}"`);
-  }
-
-  if (recursive) {
-    for await (const d of getDirs(absoluteWorkingDir)) {
-      await processDir(d);
-    }
-  }
-  // Process current directory in any case
-  await processDir(absoluteWorkingDir);
-}
 
 const defaultConfig: AudipoMarksConfig = {
   ffmpeg: {
@@ -50,7 +21,23 @@ const defaultConfig: AudipoMarksConfig = {
   },
 };
 
-async function processDir(dir: string) {
+export default async function (workingDir: string, recursive: boolean, config: RecursivePartial<AudipoMarksConfig>) {
+  const absoluteWorkingDir = path.resolve(workingDir);
+
+  if (!directoryExists(workingDir)) {
+    throw new MarkError(`Directory not found: "${directoryExists}"`);
+  }
+
+  if (recursive) {
+    for await (const d of getDirs(absoluteWorkingDir)) {
+      await processDir(d, config);
+    }
+  }
+  // Process current directory in any case
+  await processDir(absoluteWorkingDir, config);
+}
+
+async function processDir(dir: string, configOverride: RecursivePartial<AudipoMarksConfig>) {
   log(`Processing directory "${dir}"`);
   const audioFiles: string[] = [];
   let configFile: string | undefined = undefined;
@@ -65,11 +52,22 @@ async function processDir(dir: string) {
     }
   }
   if (configFile != null) {
-    log(`Found config file "${configFile}"`);
+    log(`Found config file "${path.basename(configFile)}"`);
   }
   const config = configFile != null ? readConfig(configFile) : defaultConfig;
 
-  log(`Using FFmpeg parameters: ` + JSON.stringify(config.ffmpeg));
+  // Override default and file config with the one from the parameters, if any
+  if (configOverride.ffmpeg != null) {
+    if (configOverride.ffmpeg.duration != null) {
+      config.ffmpeg.duration = configOverride.ffmpeg.duration;
+    }
+    if (configOverride.ffmpeg.noise != null) {
+      config.ffmpeg.noise = configOverride.ffmpeg.noise;
+    }
+  }
+  // Override the config with the passed parameters
+
+  log(`Using FFmpeg parameters: ` + renderFFmpegParams(config.ffmpeg));
 
   // Mark ID counter
   let markId = 1;
@@ -81,9 +79,7 @@ async function processDir(dir: string) {
       "-i",
       f,
       "-af",
-      `silencedetect=n=-${config.ffmpeg.noise}dB:d=${
-        config.ffmpeg.duration / 1000
-      },ametadata=mode=print:file=-`,
+      `silencedetect=n=-${config.ffmpeg.noise}dB:d=${config.ffmpeg.duration / 1000},ametadata=mode=print:file=-`,
       "-f",
       "null",
       "-",
@@ -126,7 +122,7 @@ async function processDir(dir: string) {
     // Normlize marks
     const normalizedMarks = normalizeMarks(marks);
 
-    log(`File ${f}: found ${normalizedMarks.length} marks.`);
+    log(`File ${path.basename(f)}: found ${normalizedMarks.length} marks.`);
     audipoMarksFiles.push({
       filepath: path.relative(dir, f),
       fileSize: statSync(f).size,
@@ -142,13 +138,14 @@ async function processDir(dir: string) {
   };
   const storageFilePath = path.join(dir, LOCAL_MARKS_FILENAME);
 
-  log(`Writing audipomark file: "${storageFilePath}"`);
-  writeFileSync(storageFilePath, JSON.stringify(audipoMarksStorage, null, 2));
-  // Save config
-  const configFilePath = path.join(dir, LOCAL_CONFIG_FILE);
-
-  log(`Writing config file: "${configFilePath}"`);
-  writeFileSync(configFilePath, JSON.stringify(config, null, 2));
+  if (audipoMarksStorage.files.length > 0) {
+    log(`Writing audipomark file: "${path.basename(storageFilePath)}"`);
+    writeFileSync(storageFilePath, JSON.stringify(audipoMarksStorage, null, 2));
+    // Save config
+    const configFilePath = path.join(dir, LOCAL_CONFIG_FILE);
+    log(`Writing config file: "${path.basename(configFilePath)}"`);
+    writeFileSync(configFilePath, JSON.stringify(config, null, 2));
+  }
 }
 
 async function* getFilesFromDir(dir: string): AsyncGenerator<string> {

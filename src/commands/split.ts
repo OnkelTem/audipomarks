@@ -5,13 +5,7 @@ import {
   AudipoMarksFile,
   AudipoMarksStorage,
 } from "../models/audipomark.model";
-import {
-  directoryExists,
-  fileExists,
-  isChildOfPath,
-  LOCAL_MARKS_FILENAME,
-  log,
-} from "../utils";
+import { directoryExists, fileExists, isChildOfPath, log } from "../utils";
 import {
   enumarateMarks,
   normalizeMarks,
@@ -19,6 +13,7 @@ import {
 } from "../services/audipomark.service";
 import { allRegExp, askUser, yesRegExp } from "../services/readline.service";
 import { Abort } from "../errors";
+import { LOCAL_MARKS_FILENAME } from "../constants";
 
 type DirFilesMap = Map<string, AudipoMarksFile[]>;
 

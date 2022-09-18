@@ -2,16 +2,12 @@ import path from "path";
 import fs from "fs";
 import { promises as fsPromises } from "fs";
 
-import {
-  directoryExists,
-  GLOBAL_MARKS_FILENAME,
-  LOCAL_MARKS_FILENAME,
-  log,
-} from "../utils";
+import { directoryExists, log } from "../utils";
 import { enumarateMarks, readStorage } from "../services/audipomark.service";
 import { AudipoMarksStorage } from "../models/audipomark.model";
 import { askUser, yesRegExp } from "../services/readline.service";
 import { Abort, JoinError, StorageError } from "../errors";
+import { GLOBAL_MARKS_FILENAME, LOCAL_MARKS_FILENAME } from "../constants";
 
 export default async function (workingDir: string) {
   const absoluteWorkingDir = path.resolve(workingDir);

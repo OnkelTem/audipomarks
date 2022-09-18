@@ -2,6 +2,7 @@ import which from "which";
 import { execFile } from "child_process";
 import util from "util";
 import { FFmpegError } from "../errors";
+import { AudipoMarksConfig } from "../models/config.model";
 
 const execFileAsync = util.promisify(execFile);
 
@@ -22,4 +23,8 @@ export async function ffmpeg(params: string[]) {
     ffmpegPath = locateFFmpeg();
   }
   return await execFileAsync(ffmpegPath, params);
+}
+
+export function renderFFmpegParams(config: AudipoMarksConfig["ffmpeg"]) {
+  return `duration: ${config.duration}ms, noise tolerance: ${config.noise}dB`;
 }
