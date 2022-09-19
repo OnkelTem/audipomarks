@@ -1,6 +1,6 @@
 # Audipo Marks Manager
 
-![npm](https://img.shields.io/npm/v/audipomarks)
+[![npm](https://img.shields.io/npm/v/audipomarks)](https://www.npmjs.com/package/audipomarks)
 
 `audipomarks` is an [Audipo](#audipo) player [marks](#marks) manager, that allows you to:
 
